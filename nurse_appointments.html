@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nurse Dashboard - Book Appointment</title>
+  <style>
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    :root {
+      --primary: #0891b2;
+      --secondary: #64748b;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --light: #f1f5f9;
+    }
+    body {
+      background: #f8fafc;
+    }
+    /* Navbar */
+    .navbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      cursor: pointer;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      display: none;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 0.75rem 1rem;
+      text-decoration: none;
+      color: var(--primary);
+      transition: background 0.3s;
+    }
+    .dropdown a:hover {
+      background: var(--light);
+    }
+    /* Layout */
+    .main-container {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      height: calc(100vh - 74px);
+    }
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-item {
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .menu-item:hover {
+      background: var(--light);
+    }
+    .menu-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .menu-item a {
+      text-decoration: none;
+      color: inherit;
+      width: 100%;
+    }
+    .content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      overflow-y: auto;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-secondary {
+      background: var(--secondary);
+      margin-left: 0.5rem;
+    }
+    .message {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">Nurse Dashboard</div>
+    <div class="user-info" id="userInfo">
+      <div class="avatar" id="nurseAvatar">NR</div>
+      <span id="nurseName">Loading...</span>
+      <div class="dropdown" id="logoutDropdown">
+        <a href="#" id="logoutLink">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="menu-item"><a href="nurse_dashboard.html" style="text-decoration:none; color:inherit;">➕ Add Patient</a></div>
+      <div class="menu-item"><a href="patients_list_nurse.html" style="text-decoration:none; color:inherit;">👥 Patient List</a></div>
+      <div class="menu-item active"><a href="book_appointment.html" style="text-decoration:none; color:inherit;">📅 Book Appointment</a></div>
+      <div class="menu-item"><a href="vital_signs_nurse.html" style="text-decoration:none; color:inherit;">📊 Vital Signs</a></div>
+      <div class="menu-item"><a href="settings_nurse.html" style="text-decoration:none; color:inherit;">⚙️ Settings</a></div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h2>Book Appointment</h2>
+      <!-- Patient Lookup Section (can be kept outside if desired) -->
+      <div class="form-group">
+        <label for="contactNumber">Patient Contact Number (if ID not known)</label>
+        <input type="tel" id="contactNumber" placeholder="Enter contact number">
+        <button type="button" class="btn btn-secondary" id="findPatientBtn">Find Patient</button>
+      </div>
+      <!-- Appointment Form (All required fields are inside the form) -->
+      <form id="appointmentForm">
+        <div class="form-group">
+          <label for="patientID">Patient ID</label>
+          <input type="number" name="patientID" id="patientID" placeholder="Patient ID" required>
+        </div>
+        <div class="form-group">
+          <label for="appointmentDate">Appointment Date & Time</label>
+          <input type="datetime-local" name="appointmentDate" id="appointmentDate" required>
+        </div>
+        <div class="form-group">
+          <label for="reason">Reason for Appointment</label>
+          <textarea name="reason" id="reason" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="doctor">Select Doctor</label>
+          <select name="doctor" id="doctor" required>
+            <option value="">Loading doctors...</option>
+          </select>
+        </div>
+        <button type="submit" class="btn">Book Appointment</button>
+      </form>
+      <div class="message" id="responseMessage"></div>
+    </main>
+  </div>
+
+  <script>
+    // Set nurse name and handle logout
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(window.atob(base64));
+      } catch (e) {
+        return null;
+      }
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    }
+    const tokenData = parseJwt(token);
+    document.getElementById("nurseName").textContent = `Nurse ${tokenData.username}`;
+    document.getElementById("userInfo").addEventListener("click", function(event) {
+      const dropdown = document.getElementById("logoutDropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+      event.stopPropagation();
+    });
+    window.addEventListener("click", function() {
+      document.getElementById("logoutDropdown").style.display = "none";
+    });
+    document.getElementById("logoutLink").addEventListener("click", function(e) {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
+
+    // Function to populate doctor dropdown from backend
+    async function loadDoctors() {
+      try {
+        const response = await fetch("http://localhost:5000/doctors", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          }
+        });
+        const result = await response.json();
+        const doctorSelect = document.getElementById("doctor");
+        doctorSelect.innerHTML = "";
+        if (result.doctors && result.doctors.length > 0) {
+          result.doctors.forEach(doc => {
+            const option = document.createElement("option");
+            option.value = doc.username;
+            option.textContent = doc.username;
+            doctorSelect.appendChild(option);
+          });
+        } else {
+          doctorSelect.innerHTML = '<option value="">No doctors available</option>';
+        }
+      } catch (error) {
+        console.error("Error fetching doctors:", error);
+        document.getElementById("doctor").innerHTML = '<option value="">Error loading doctors</option>';
+      }
+    }
+
+    // Function to search for patient by contact number
+    async function findPatientByContact() {
+      const contactNumber = document.getElementById("contactNumber").value.trim();
+      if (!contactNumber) {
+        alert("Please enter a contact number.");
+        return;
+      }
+      try {
+        const response = await fetch(`http://localhost:5000/nurse/patient_by_contact?contactNumber=${encodeURIComponent(contactNumber)}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          }
+        });
+        const result = await response.json();
+        if (result.error) {
+          alert(result.error);
+        } else {
+          // Populate the Patient ID field if found
+          document.getElementById("patientID").value = result.patient.patientID;
+        }
+      } catch (error) {
+        console.error("Error fetching patient by contact:", error);
+        alert("Error connecting to server.");
+      }
+    }
+
+    // Call loadDoctors() on page load
+    window.onload = loadDoctors;
+    document.getElementById("findPatientBtn").addEventListener("click", findPatientByContact);
+
+    // Handle appointment form submission
+    document.getElementById("appointmentForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const appointmentData = Object.fromEntries(formData.entries());
+      appointmentData.patientID = parseInt(appointmentData.patientID);
+
+      try {
+        const response = await fetch("http://localhost:5000/appointment/book", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify(appointmentData)
+        });
+        const result = await response.json();
+        const messageEl = document.getElementById("responseMessage");
+        if (result.error) {
+          messageEl.style.color = "red";
+          messageEl.textContent = result.error;
+        } else {
+          messageEl.style.color = "green";
+          messageEl.textContent = result.message;
+          e.target.reset();
+          loadDoctors(); // Optionally reload doctors
+        }
+      } catch (error) {
+        console.error("Error booking appointment:", error);
+        document.getElementById("responseMessage").textContent = "Error connecting to server.";
+      }
+    });
+  </script>
+</body>
+</html>

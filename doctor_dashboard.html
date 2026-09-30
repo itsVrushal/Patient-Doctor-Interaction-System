@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor's Dashboard - AI Health Analytics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --light: #f1f5f9;
+        }
+
+        body {
+            background: #f8fafc;
+        }
+
+        .navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+            z-index: 100;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 0.75rem 1rem;
+            text-decoration: none;
+            color: var(--primary);
+            transition: background 0.3s;
+        }
+
+        .dropdown a:hover {
+            background: var(--light);
+        }
+
+        .main-container {
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+            height: calc(100vh - 74px);
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-item {
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .menu-item:hover {
+            background: var(--light);
+        }
+
+        .menu-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .content {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .patient-list {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: var(--light);
+            font-weight: 600;
+        }
+
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+        }
+
+        .status.normal {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            transition: opacity 0.3s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">HealthAI Dashboard</div>
+        <div class="user-info" id="userInfo">
+            <div class="avatar" id="doctorAvatar">DR</div>
+            <span id="doctorName">Dr. Unknown</span>
+            <div class="dropdown" id="logoutDropdown">
+                <a href="#" id="logoutLink">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <div class="menu-item active">📊 Dashboard</div>
+            <div class="menu-item"><a href="patients_list_doctor.html" style="text-decoration:none; color:inherit;">👥 Patient List</a></div>
+            <div class="menu-item"><a href="doctor_appointment.html" style="text-decoration:none; color:inherit;">📅 Appointments</a></div>
+            <!-- <div class="menu-item">📈 Analytics</div> -->
+            <!-- <div class="menu-item">⚙️ Settings</div> -->
+        </aside>
+
+        <main class="content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div>Total Patients</div>
+                    <div class="stat-value" id="totalPatients">--</div>
+                    <div id="totalPatientsTrend"></div>
+                </div>
+                <div class="stat-card">
+                    <div>Critical Cases</div>
+                    <div class="stat-value" id="criticalCases">--</div>
+                    <div id="criticalCasesTrend"></div>
+                </div>
+                <div class="stat-card">
+                    <div>Appointments Today</div>
+                    <div class="stat-value" id="appointmentsToday">--</div>
+                    <div id="appointmentsTrend"></div>
+                </div>
+                <div class="stat-card">
+                    <div>AI Analysis Completed</div>
+                    <div class="stat-value" id="aiAnalysis">--</div>
+                    <div id="aiAnalysisTrend"></div>
+                </div>
+            </div>
+
+            <div class="patient-list">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Last Visit</th>
+                            <th>Health Status</th>
+                            <th>AI Analysis</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patientTableBody">
+                        <!-- Dynamic rows will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Function to decode JWT token payload
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Retrieve the JWT token from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "login.html";
+        }
+
+        // Decode token to extract the doctor's username
+        const tokenData = parseJwt(token);
+        const doctorName = tokenData ? tokenData.username : "Unknown";
+        document.getElementById("doctorName").textContent = `Dr. ${doctorName}`;
+
+        // Toggle dropdown for logout when clicking on user info
+        document.getElementById("userInfo").addEventListener("click", function(event) {
+            const dropdown = document.getElementById("logoutDropdown");
+            dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+            event.stopPropagation();
+        });
+
+        // Hide dropdown if clicking outside
+        window.addEventListener("click", function() {
+            document.getElementById("logoutDropdown").style.display = "none";
+        });
+
+        // Logout functionality
+        document.getElementById("logoutLink").addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        });
+
+        // Function to load dashboard data from backend
+        async function loadDashboardData() {
+            try {
+                const response = await fetch("http://localhost:5000/doctor/dashboard", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    }
+                });
+                const data = await response.json();
+                if (data.error) {
+                    console.error(data.error);
+                    return;
+                }
+                // Update stats (example fields; adjust according to your backend response)
+                document.getElementById("totalPatients").textContent = data.stats.totalPatients;
+                document.getElementById("totalPatientsTrend").textContent = data.stats.totalPatientsTrend;
+                document.getElementById("criticalCases").textContent = data.stats.criticalCases;
+                document.getElementById("criticalCasesTrend").textContent = data.stats.criticalCasesTrend;
+                document.getElementById("appointmentsToday").textContent = data.stats.appointmentsToday;
+                document.getElementById("appointmentsTrend").textContent = data.stats.appointmentsTrend;
+                document.getElementById("aiAnalysis").textContent = data.stats.aiAnalysis;
+                document.getElementById("aiAnalysisTrend").textContent = data.stats.aiAnalysisTrend;
+                
+                // Populate patient table
+                const tbody = document.getElementById("patientTableBody");
+                tbody.innerHTML = "";
+                data.patients.forEach(patient => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${patient.name}</td>
+                        <td>${patient.lastVisit}</td>
+                        <td><span class="status ${patient.statusClass}">${patient.healthStatus}</span></td>
+                        <td>${patient.aiAnalysis}</td>
+                        <td><button class="action-btn" onclick="viewPatientDetails('${patient.id}')">View Details</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+            }
+        }
+
+        // Function to view patient details (stubbed for demonstration)
+        function viewPatientDetails(patientId) {
+            alert(`Viewing detailed records for patient: ${patientId}`);
+            // In production, redirect to a detailed page:
+            // window.location.href = `/doctor/patient/${patientId}`;
+        }
+
+        // Menu interactivity
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Search functionality
+        document.querySelector('.search-bar').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#patientTableBody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Load dashboard data on page load
+        loadDashboardData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nurse's Dashboard - Patient Management</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <style>
+    /* [CSS styles remain the same as your provided code] */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    :root {
+      --primary: #0891b2;
+      --secondary: #64748b;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --light: #f1f5f9;
+    }
+    body {
+      background: #f8fafc;
+    }
+    .navbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .main-container {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      height: calc(100vh - 74px);
+    }
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-item {
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .menu-item:hover {
+      background: var(--light);
+    }
+    .menu-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    /* Style for checkbox to align with label */
+    .form-group input[type="checkbox"] {
+      width: auto;
+      margin-right: 0.5rem;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: opacity 0.3s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .message {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Nurse Dashboard</div>
+    <div class="user-info" id="userInfo">
+      <div class="avatar" id="nurseAvatar">NR</div>
+      <span id="nurseName">Loading...</span>
+      <div class="dropdown" id="logoutDropdown">
+        <a href="#" id="logoutLink">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="menu-item active"><a href="nurse_dashboard.html" style="text-decoration:none; color:inherit;">➕ Add Patient</a></div>
+      <div class="menu-item"><a href="patients_list_nurse.html" style="text-decoration:none; color:inherit;">👥 Patient List</a></div>
+      <div class="menu-item"><a href="nurse_appointments.html" style="text-decoration:none; color:inherit;">📅 Book Appointment</a></div>
+      <div class="menu-item"><a href="vital_signs_nurse.html" style="text-decoration:none; color:inherit;">📊 Vital Signs</a></div>
+      <div class="menu-item"><a href="settings_nurse.html" style="text-decoration:none; color:inherit;">⚙️ Settings</a></div>
+    </aside>
+
+    <main class="content">
+      <form id="patientForm">
+        <h2>Add New Patient</h2>
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" name="firstName" required>
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" name="lastName" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" name="dateOfBirth" required>
+          </div>
+          <div class="form-group">
+            <label>Gender</label>
+            <select name="gender" required>
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Contact Number</label>
+            <input type="tel" name="contactNumber" required>
+          </div>
+          <div class="form-group">
+            <label>Blood Type</label>
+            <select name="bloodType" required>
+              <option value="">Select Blood Type</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <textarea name="address" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Emergency Contact</label>
+          <input type="text" name="emergencyContact" required>
+        </div>
+        <div class="form-group">
+          <label>Medical History</label>
+          <textarea name="medicalhistory" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Current Medications</label>
+          <textarea name="currentMedications" rows="2"></textarea>
+        </div>
+        <!-- New ICU Admission field -->
+        <div class="form-group">
+          <label>
+            <input type="checkbox" name="icuAdmitted">
+            Admitted to ICU
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Add Patient</button>
+      </form>
+      <div class="message" id="responseMessage"></div>
+    </main>
+  </div>
+
+  <script>
+    // Function to decode JWT token payload
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(window.atob(base64));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Check for JWT token and redirect if missing
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    // Decode token and set nurse name in navbar
+    const tokenData = parseJwt(token);
+    document.getElementById('nurseName').textContent = `Nurse ${tokenData.username}`;
+
+    // Toggle logout dropdown
+    document.getElementById('userInfo').addEventListener('click', function(event) {
+      const dropdown = document.getElementById('logoutDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      event.stopPropagation();
+    });
+    window.addEventListener('click', function() {
+      document.getElementById('logoutDropdown').style.display = 'none';
+    });
+    document.getElementById('logoutLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    });
+
+    // Handle form submission to add new patient
+    document.getElementById('patientForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      // Convert form data to an object. For the checkbox, convert its state to a boolean.
+      const patientData = Object.fromEntries(formData.entries());
+      patientData.icuAdmitted = formData.get('icuAdmitted') ? true : false;
+      
+      try {
+        const response = await fetch('http://localhost:5000/nurse/patient', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(patientData)
+        });
+        const result = await response.json();
+        const messageEl = document.getElementById('responseMessage');
+        if (result.error) {
+          messageEl.style.color = "var(--danger)";
+          messageEl.textContent = result.error;
+        } else {
+          messageEl.style.color = "var(--success)";
+          messageEl.textContent = result.message;
+          e.target.reset();
+        }
+      } catch (error) {
+        console.error("Error adding patient:", error);
+        document.getElementById('responseMessage').textContent = "Error connecting to server.";
+      }
+    });
+  </script>
+</body>
+</html>

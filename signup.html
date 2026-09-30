@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    form { max-width: 400px; margin: auto; }
+    input, select, button { width: 100%; padding: 10px; margin: 5px 0; }
+    .message { margin-top: 10px; text-align: center; }
+    .link { text-align: center; margin-top: 15px; }
+    .link a { text-decoration: none; color: blue; }
+  </style>
+</head>
+<body>
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <select id="role" required>
+      <option value="">Select Role</option>
+      <option value="doctor">Doctor</option>
+      <option value="nurse">Nurse</option>
+      <option value="administrator">Administrator</option>
+    </select>
+    <button type="submit">Sign Up</button>
+  </form>
+  <div class="message" id="message"></div>
+  <div class="link">
+    Already have an account? <a href="login.html">Login here</a>.
+  </div>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const role = document.getElementById("role").value;
+      
+      try {
+        const response = await fetch("http://localhost:5000/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password, role })
+        });
+        
+        const result = await response.json();
+        document.getElementById("message").textContent = result.message || result.error;
+      } catch (error) {
+        document.getElementById("message").textContent = "Error connecting to server.";
+      }
+    });
+  </script>
+</body>
+</html>

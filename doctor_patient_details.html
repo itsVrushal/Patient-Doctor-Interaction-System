@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Patient Details</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8fafc;
+      padding: 2rem;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h2 {
+      margin-bottom: 1rem;
+      color: var(--primary, #2563eb);
+    }
+    p {
+      margin: 0.5rem 0;
+    }
+    .chart-container {
+      margin-top: 2rem;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      background: var(--primary, #2563eb);
+      color: white;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    select {
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Patient Details</h2>
+    <div id="patientDetails">
+      <!-- Patient details will be populated here -->
+    </div>
+    
+    <!-- Dropdown to select which vital to view -->
+    <label for="vitalSelect"><strong>Select Vital Sign:</strong></label>
+    <select id="vitalSelect">
+      <option value="heartRate">Heart Rate (bpm)</option>
+      <option value="bloodPressure">Blood Pressure (mmHg)</option>
+      <option value="bodyTemp">Body Temperature (°F)</option>
+      <option value="bloodGlucose">Blood Glucose (mg/dL)</option>
+      <option value="oxygenSaturation">Oxygen Saturation (%)</option>
+    </select>
+    
+    <div class="chart-container">
+      <canvas id="vitalsChart" width="800" height="400"></canvas>
+    </div>
+    <button class="btn" onclick="goBack()">Back</button>
+  </div>
+
+  <script>
+    // Helper function to get query parameters from URL
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    // Helper function to calculate age from date of birth (YYYY-MM-DD)
+    function calculateAge(dobStr) {
+      const dob = new Date(dobStr);
+      const today = new Date();
+      let age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    // Function to load and display patient details
+    async function loadPatientDetails() {
+      const patientId = getQueryParam("patientId");
+      if (!patientId) {
+        document.getElementById("patientDetails").innerText = "No patient selected.";
+        return;
+      }
+      try {
+        const response = await fetch(`http://localhost:5000/doctor/patient/${patientId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        const result = await response.json();
+        if (result.error) {
+          document.getElementById("patientDetails").innerText = result.error;
+        } else {
+          const patient = result.patient;
+          const age = calculateAge(patient.dateOfBirth);
+          document.getElementById("patientDetails").innerHTML = `
+            <p><strong>Name:</strong> ${patient.firstName} ${patient.lastName}</p>
+            <p><strong>Age:</strong> ${age}</p>
+            <p><strong>Gender:</strong> ${patient.gender || '-'}</p>
+            <p><strong>Blood Type:</strong> ${patient.bloodType || '-'}</p>
+            <p><strong>Date of Birth:</strong> ${patient.dateOfBirth}</p>
+            <p><strong>Contact Number:</strong> ${patient.contactNumber}</p>
+            <p><strong>Address:</strong> ${patient.address}</p>
+            <p><strong>Emergency Contact:</strong> ${patient.emergencyContact}</p>
+            <p><strong>Allergies:</strong> ${patient.allergies || 'None'}</p>
+            <p><strong>Current Medications:</strong> ${patient.currentMedications || 'None'}</p>
+          `;
+          // Load the default vital sign chart (heart rate)
+          updateVitalsChart("heartRate");
+        }
+      } catch (error) {
+        console.error("Error fetching patient details:", error);
+        document.getElementById("patientDetails").innerText = "Error connecting to server.";
+      }
+    }
+
+    // Sample time labels (could be dynamic based on data)
+    const labels = ["10:00", "10:05", "10:10", "10:15", "10:20", "10:25", "10:30"];
+    // Sample data arrays for each vital sign (replace with dynamic data as needed)
+    const vitalData = {
+      heartRate: [72, 75, 78, 80, 76, 74, 73],
+      bloodPressure: [120, 122, 119, 121, 123, 118, 120],
+      bodyTemp: [98.6, 98.7, 98.8, 98.6, 98.5, 98.7, 98.6],
+      bloodGlucose: [90, 95, 92, 93, 94, 90, 91],
+      oxygenSaturation: [98, 97, 98, 99, 97, 98, 98]
+    };
+
+    let vitalsChart; // global Chart instance
+
+    // Function to create/update the Chart.js graph based on selected vital
+    function updateVitalsChart(vitalKey) {
+      const datasetLabel = {
+        heartRate: "Heart Rate (bpm)",
+        bloodPressure: "Blood Pressure (mmHg)",
+        bodyTemp: "Body Temperature (°F)",
+        bloodGlucose: "Blood Glucose (mg/dL)",
+        oxygenSaturation: "Oxygen Saturation (%)"
+      }[vitalKey];
+
+      const borderColors = {
+        heartRate: "red",
+        bloodPressure: "blue",
+        bodyTemp: "orange",
+        bloodGlucose: "green",
+        oxygenSaturation: "purple"
+      };
+
+      const backgroundColors = {
+        heartRate: "rgba(255, 0, 0, 0.1)",
+        bloodPressure: "rgba(0, 0, 255, 0.1)",
+        bodyTemp: "rgba(255, 165, 0, 0.1)",
+        bloodGlucose: "rgba(0, 128, 0, 0.1)",
+        oxygenSaturation: "rgba(128, 0, 128, 0.1)"
+      };
+
+      const data = vitalData[vitalKey];
+
+      if (vitalsChart) {
+        // Update existing chart
+        vitalsChart.data.labels = labels;
+        vitalsChart.data.datasets[0].label = datasetLabel;
+        vitalsChart.data.datasets[0].data = data;
+        vitalsChart.data.datasets[0].borderColor = borderColors[vitalKey];
+        vitalsChart.data.datasets[0].backgroundColor = backgroundColors[vitalKey];
+        vitalsChart.update();
+      } else {
+        // Create chart if it doesn't exist yet
+        const ctx = document.getElementById("vitalsChart").getContext("2d");
+        vitalsChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: datasetLabel,
+              data: data,
+              borderColor: borderColors[vitalKey],
+              backgroundColor: backgroundColors[vitalKey],
+              fill: false,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              title: { display: true, text: "Patient Vital Signs Over Time" }
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: { display: true, text: "Values" }
+              },
+              x: {
+                title: { display: true, text: "Time" }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // Event listener for the vital dropdown
+    document.getElementById("vitalSelect").addEventListener("change", function() {
+      const selectedVital = this.value;
+      updateVitalsChart(selectedVital);
+    });
+
+    // Function to go back to the previous page
+    function goBack() {
+      window.history.back();
+    }
+
+    // Load patient details (and initialize chart) on page load
+    loadPatientDetails();
+  </script>
+</body>
+</html>

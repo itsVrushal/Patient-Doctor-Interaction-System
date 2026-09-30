@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor's Dashboard - Patient List</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    :root {
+      --primary: #2563eb;
+      --secondary: #64748b;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --light: #f1f5f9;
+    }
+    body {
+      background: #f8fafc;
+    }
+    /* Navbar */
+    .navbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      cursor: pointer;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      display: none;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 0.75rem 1rem;
+      text-decoration: none;
+      color: var(--primary);
+      transition: background 0.3s;
+    }
+    .dropdown a:hover {
+      background: var(--light);
+    }
+    /* Layout */
+    .main-container {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      height: calc(100vh - 74px);
+    }
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .menu-item {
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .menu-item:hover {
+      background: var(--light);
+    }
+    .menu-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
+    }
+    /* Table and Search */
+    .search-bar {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: var(--light);
+      font-weight: 600;
+    }
+    .action-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+      transition: opacity 0.3s;
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
+    .message {
+      margin-top: 1rem;
+      font-size: 1rem;
+      color: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">Doctor Dashboard</div>
+    <div class="user-info" id="userInfo">
+      <div class="avatar" id="doctorAvatar">DR</div>
+      <span id="doctorName">Loading...</span>
+      <div class="dropdown" id="logoutDropdown">
+        <a href="#" id="logoutLink">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="menu-item"><a href="doctor_dashboard.html" style="text-decoration:none; color:inherit;">📊 Dashboard</a></div>
+        <div class="menu-item active"><a href="patients_list_doctor.html" style="text-decoration:none; color:inherit;">👥 Patient List</a></div>
+        <div class="menu-item"><a href="doctor_appointment.html" style="text-decoration:none; color:inherit;">📅 Appointments</a></div>
+        <!-- <div class="menu-item">📈 Analytics</div> -->
+        <!-- <div class="menu-item">⚙️ Settings</div> -->
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h2>Patient List</h2>
+      <input type="text" class="search-bar" placeholder="Search patients..." id="searchBar">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient Name</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Blood Type</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="patientTableBody">
+          <!-- Patient rows will be dynamically inserted here -->
+        </tbody>
+      </table>
+      <div class="message" id="listMessage"></div>
+    </main>
+  </div>
+
+  <script>
+    // Function to decode JWT token payload
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(window.atob(base64));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Retrieve JWT token from localStorage; redirect if missing
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    // Decode token and set doctor name in navbar
+    const tokenData = parseJwt(token);
+    document.getElementById('doctorName').textContent = `Dr. ${tokenData.username}`;
+
+    // Toggle logout dropdown
+    document.getElementById('userInfo').addEventListener('click', function(event) {
+      const dropdown = document.getElementById('logoutDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      event.stopPropagation();
+    });
+    window.addEventListener('click', function() {
+      document.getElementById('logoutDropdown').style.display = 'none';
+    });
+    document.getElementById('logoutLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    });
+
+    // Function to fetch the patient list from the backend
+    async function loadPatientList() {
+      try {
+        const response = await fetch('http://localhost:5000/doctor/patient_list', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        });
+        const result = await response.json();
+        if (result.error) {
+          document.getElementById('listMessage').textContent = result.error;
+          return;
+        }
+        const patients = result.patients; // Expecting { patients: [...] }
+        const tbody = document.getElementById('patientTableBody');
+        tbody.innerHTML = "";
+        patients.forEach(patient => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${patient.firstName} ${patient.lastName}</td>
+            <td>${patient.age || '-'}</td>
+            <td>${patient.gender || '-'}</td>
+            <td>${patient.bloodType || '-'}</td>
+            <td><button class="action-btn" onclick="viewPatientDetails('${patient._id}')">View</button></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error("Error fetching patient list:", error);
+        document.getElementById('listMessage').textContent = "Error connecting to server.";
+      }
+    }
+
+    // Search functionality: filter table rows based on search bar input
+    document.getElementById('searchBar').addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      document.querySelectorAll('#patientTableBody tr').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+      });
+    });
+
+    // Stub function for viewing patient details
+    function viewPatientDetails(patientId) {
+      alert(`Viewing details for patient ID: ${patientId}`);
+      window.location.href = `doctor_patient_details.html?patientId=${patientId}`;
+
+    }
+
+    // Load the patient list on page load
+    loadPatientList();
+  </script>
+</body>
+</html>

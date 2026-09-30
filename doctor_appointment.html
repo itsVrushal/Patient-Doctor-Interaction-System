@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard - Appointments</title>
+  <style>
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    :root {
+      --primary: #2563eb;
+      --secondary: #64748b;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --light: #f1f5f9;
+    }
+    body {
+      background: #f8fafc;
+    }
+    /* Navbar */
+    .navbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      cursor: pointer;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--primary);
+    }
+    .dropdown {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      display: none;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 0.75rem 1rem;
+      text-decoration: none;
+      color: var(--primary);
+      transition: background 0.3s;
+    }
+    .dropdown a:hover {
+      background: var(--light);
+    }
+    /* Layout */
+    .main-container {
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 2rem;
+      height: calc(100vh - 74px);
+    }
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .menu-item {
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .menu-item:hover {
+      background: var(--light);
+    }
+    .menu-item.active {
+      background: var(--primary);
+      color: white;
+    }
+    .menu-item a {
+      text-decoration: none;
+      color: inherit;
+      width: 100%;
+    }
+    .content {
+      background: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    th {
+      background: var(--light);
+      font-weight: 600;
+    }
+    .action-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+      transition: opacity 0.3s;
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
+    @media (max-width: 768px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="logo">HealthAI Dashboard</div>
+    <div class="user-info" id="userInfo">
+      <div class="avatar" id="doctorAvatar">DR</div>
+      <span id="doctorName">Dr. Unknown</span>
+      <div class="dropdown" id="logoutDropdown">
+        <a href="#" id="logoutLink">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Layout -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="menu-item"><a href="doctor_dashboard.html" style="text-decoration:none; color:inherit;">📊 Dashboard</a></div>
+      <div class="menu-item"><a href="patients_list_doctor.html" style="text-decoration:none; color:inherit;">👥 Patient List</a></div>
+      <div class="menu-item active"><a href="doctor_appointments.html" style="text-decoration:none; color:inherit;">📅 Appointments</a></div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <h2>Appointments</h2>
+      <!-- Category Filter Dropdown -->
+      <div class="filter-container">
+        <label for="categoryFilter">Show:</label>
+        <select id="categoryFilter">
+          <option value="upcoming">Upcoming Appointments</option>
+          <option value="completed">Completed Appointments</option>
+          <option value="expired">Expired Appointments</option>
+        </select>
+      </div>
+      <!-- Appointments Table -->
+      <table>
+        <thead>
+          <tr>
+            <th>Appointment ID</th>
+            <th>Patient Name</th>
+            <th>Appointment Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="appointmentTableBody">
+          <!-- Appointment rows will be inserted dynamically -->
+        </tbody>
+      </table>
+    </main>
+  </div>
+
+  <script>
+    // Utility: Decode JWT token payload
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(window.atob(base64));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Retrieve token and redirect to login if missing
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    }
+    const tokenData = parseJwt(token);
+    document.getElementById("doctorName").textContent = `Dr. ${tokenData.username}`;
+
+    // Logout dropdown functionality
+    document.getElementById("userInfo").addEventListener("click", function(event) {
+      const dropdown = document.getElementById("logoutDropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+      event.stopPropagation();
+    });
+    window.addEventListener("click", function() {
+      document.getElementById("logoutDropdown").style.display = "none";
+    });
+    document.getElementById("logoutLink").addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
+
+    // Global variable to store all appointments
+    let allAppointments = [];
+
+    // Function to load doctor's appointments from the backend
+    async function loadAppointments() {
+      try {
+        const response = await fetch("http://localhost:5000/doctor/appointments", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          }
+        });
+        const data = await response.json();
+        if (data.error) {
+          console.error(data.error);
+          return;
+        }
+        allAppointments = data.appointments;
+        filterAppointments();
+      } catch (error) {
+        console.error("Error loading appointments:", error);
+      }
+    }
+
+    // Function to filter appointments based on the selected category
+    function filterAppointments() {
+      const category = document.getElementById("categoryFilter").value;
+      const now = new Date();
+      let filtered = [];
+
+      if (category === "upcoming") {
+        filtered = allAppointments.filter(appt => {
+          const apptDate = new Date(appt.appointmentDate);
+          return apptDate > now && appt.status !== "completed";
+        });
+      } else if (category === "completed") {
+        filtered = allAppointments.filter(appt => appt.status === "completed");
+      } else if (category === "expired") {
+        filtered = allAppointments.filter(appt => {
+          const apptDate = new Date(appt.appointmentDate);
+          return apptDate < now && appt.status !== "completed";
+        });
+      }
+
+      renderAppointments(filtered);
+    }
+
+    // Function to render appointments into the table, including the Appointment ID column
+    function renderAppointments(appointments) {
+      const tbody = document.getElementById("appointmentTableBody");
+      tbody.innerHTML = "";
+      if (appointments.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='6'>No appointments found for this category.</td></tr>";
+        return;
+      }
+      appointments.forEach(appointment => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${appointment.appointmentID || "Unknown"}</td>
+          <td>${appointment.patientName || "Unknown"}</td>
+          <td>${appointment.appointmentDate}</td>
+          <td>${appointment.reason}</td>
+          <td>${appointment.status}</td>
+          <td>
+            <button class="action-btn" onclick="viewAppointmentDetails('${appointment.appointmentID}')">Start</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Function for viewing appointment details and redirecting to the report page,
+    // passing only the appointmentID as a query parameter.
+    function viewAppointmentDetails(appointmentID) {
+      console.log("Redirecting with appointmentID:", appointmentID);
+      window.location.href = `doctor_patient_report.html?appointmentId=${appointmentID}`;
+    }
+
+    // Event listener for dropdown changes
+    document.getElementById("categoryFilter").addEventListener("change", filterAppointments);
+
+    // Load appointments on page load
+    loadAppointments();
+  </script>
+</body>
+</html>
