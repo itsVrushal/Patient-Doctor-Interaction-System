@@ -13,7 +13,7 @@ app.config["SECRET_KEY"] = "your_secret_key"  # Replace with a secure secret
 CORS(app)
 
 # MongoDB Connection
-MONGO_URI = "mongodb+srv://tanmayzade87:OAzDsSFBPvMCuJhL@pra.set7w.mongodb.net/?retryWrites=true&w=majority&appName=PRA"
+MONGO_URI = "Enter your connection URL"
 client = MongoClient(MONGO_URI)
 db = client.get_database("mydatabase")
 users_collection = db.get_collection("users")
